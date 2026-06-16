@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Exercise {
+  id                   String                @id @default(cuid())
+  name                 String                @unique
+  mainMuscleGroup      String
+  secondaryMuscleGroup String?
+  type                 String
+  notes                String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  routineDayExercises  RoutineDayExercise[]
+  sessionExercises     SessionExercise[]
+  personalRecords      PersonalRecord[]
+}
+
+model Routine {
+  id        String           @id @default(cuid())
+  name      String
+  isActive  Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  versions  RoutineVersion[]
+}
+
+model RoutineVersion {
+  id        String       @id @default(cuid())
+  version   Int          @default(1)
+  routineId String
+  createdAt DateTime     @default(now())
+  routine   Routine      @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  days      RoutineDay[]
+  sessions  WorkoutSession[]
+}
+
+model RoutineDay {
+  id                String              @id @default(cuid())
+  name              String
+  routineVersionId  String
+  order             Int
+  routineVersion    RoutineVersion      @relation(fields: [routineVersionId], references: [id], onDelete: Cascade)
+  exercises         RoutineDayExercise[]
+}
+
+model RoutineDayExercise {
+  id           String     @id @default(cuid())
+  routineDayId String
+  exerciseId   String
+  sets         Int?
+  reps         Int?
+  order        Int
+  routineDay   RoutineDay @relation(fields: [routineDayId], references: [id], onDelete: Cascade)
+  exercise     Exercise   @relation(fields: [exerciseId], references: [id])
+}
+
+model WorkoutSession {
+  id                String             @id @default(cuid())
+  date              DateTime
+  routineId         String?
+  routineVersionId  String?
+  routineDayId      String?
+  notes             String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  routineVersion    RoutineVersion?    @relation(fields: [routineVersionId], references: [id])
+  exercises         SessionExercise[]
+}
+
+model SessionExercise {
+  id         String         @id @default(cuid())
+  sessionId  String
+  exerciseId String
+  sets       Int
+  reps       Int
+  weight     Float
+  rir        Int?
+  notes      String?
+  order      Int
+  session    WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise   Exercise       @relation(fields: [exerciseId], references: [id])
+}
+
+model BodyweightLog {
+  id        String   @id @default(cuid())
+  date      DateTime
+  weight    Float
+  bodyFat   Float?
+  chest     Float?
+  waist     Float?
+  hips      Float?
+  arms      Float?
+  thighs    Float?
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model CardioSession {
+  id        String   @id @default(cuid())
+  date      DateTime
+  type      String
+  duration  Int
+  distance  Float?
+  calories  Int?
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model PersonalRecord {
+  id         String   @id @default(cuid())
+  exerciseId String
+  weight     Float
+  reps       Int
+  volume     Float?
+  date       DateTime
+  type       String
+  createdAt  DateTime @default(now())
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+}
+
+model Streak {
+  id        String   @id @default(cuid())
+  current   Int      @default(0)
+  best      Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
