@@ -51,17 +51,18 @@ export default function HistoryPage() {
 
   const fetchSessions = () => {
     const params = new URLSearchParams({ limit: "50", offset: "0" });
-    if (search) params.set("exerciseId", search);
+    if (search) params.set("exerciseName", search);
     fetch(`/api/sessions?${params}`)
       .then((r) => r.json())
       .then((data) => {
         setSessions(data.sessions);
         setTotal(data.total);
       })
+      .catch(() => setSessions([]))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchSessions(); }, []);
+  useEffect(() => { fetchSessions(); }, [search]);
 
   const deleteSession = async (id: string) => {
     await fetch(`/api/sessions/${id}`, { method: "DELETE" });

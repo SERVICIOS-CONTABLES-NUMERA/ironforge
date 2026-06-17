@@ -7,10 +7,12 @@ export async function GET(request: NextRequest) {
   const offset = parseInt(searchParams.get("offset") || "0");
   const routineId = searchParams.get("routineId") || "";
   const exerciseId = searchParams.get("exerciseId") || "";
+  const exerciseName = searchParams.get("exerciseName") || "";
 
   const where: any = {};
   if (routineId) where.routineId = routineId;
   if (exerciseId) where.exercises = { some: { exerciseId } };
+  if (exerciseName) where.exercises = { some: { exercise: { name: { contains: exerciseName } } } };
 
   const [sessions, total] = await Promise.all([
     prisma.workoutSession.findMany({

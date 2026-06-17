@@ -23,6 +23,7 @@ interface DashboardData {
   cardioTotal: { duration: number; calories: number };
   recentSessions: any[];
   weightHistory: { date: string; weight: number }[];
+  weeklyBreakdown: { week: string; volume: number }[];
 }
 
 export default function Dashboard() {
@@ -31,7 +32,8 @@ export default function Dashboard() {
   useEffect(() => {
     fetch("/api/stats")
       .then((r) => r.json())
-      .then(setData);
+      .then(setData)
+      .catch(() => setData(null));
   }, []);
 
   if (!data) {
@@ -87,12 +89,9 @@ export default function Dashboard() {
     },
   ];
 
-  const weeklyData = [
-    { name: "Sem 1", volumen: data.weeklyVolume * 0.8 },
-    { name: "Sem 2", volumen: data.weeklyVolume * 0.9 },
-    { name: "Sem 3", volumen: data.weeklyVolume * 1.1 },
-    { name: "Sem 4", volumen: data.weeklyVolume },
-  ];
+  const weeklyData = data.weeklyBreakdown?.length
+    ? data.weeklyBreakdown
+    : [{ week: "Sem 1", volume: data.weeklyVolume }];
 
   return (
     <div className="space-y-6">
@@ -153,10 +152,10 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={weeklyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" fontSize={12} />
+                <XAxis dataKey="week" fontSize={12} />
                 <YAxis fontSize={12} />
                 <Tooltip formatter={(v: number) => [formatVolume(v), "Volumen"]} />
-                <Bar dataKey="volumen" fill="hsl(142, 76%, 36%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="volume" fill="hsl(142, 76%, 36%)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

@@ -63,16 +63,31 @@ export async function GET() {
     take: 90,
   });
 
-  const volumeByWeek = await prisma.$queryRaw`
-    SELECT 
-      strftime('%Y-%W', ws.date) as week,
-      SUM(se.weight * se.sets * se.reps) as volume
-    FROM SessionExercise se
-    JOIN WorkoutSession ws ON se.sessionId = ws.id
-    WHERE ws.date >= ${new Date(now.getFullYear(), 0, 1)}
-    GROUP BY week
-    ORDER BY week
-  `;
+  // Compute weekly volume for last 4 weeks
+  const fourWeeksAgo = new Date(now);
+  fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+  const recentExercises = await prisma.sessionExercise.findMany({
+    where: { session: { date: { gte: fourWeeksAgo } } },
+    select: { weight: true, sets: true, reps: true, session: { select: { date: true } } },
+  });
+
+  const weeklyBreakdown: { week: string; volume: number }[] = [];
+  for (let w = 3; w >= 0; w--) {
+    const weekStart = new Date(now);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay() - w * 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+    const vol = recentExercises
+      .filter((e) => {
+        const d = new Date(e.session.date);
+        return d >= weekStart && d < weekEnd;
+      })
+      .reduce((sum, e) => sum + e.weight * e.sets * e.reps, 0);
+    weeklyBreakdown.push({
+      week: `Sem ${w + 1}`,
+      volume: vol,
+    });
+  }
 
   return NextResponse.json({
     streak: streak || { current: 0, best: 0 },
@@ -89,5 +104,6 @@ export async function GET() {
     },
     recentSessions,
     weightHistory,
+    weeklyBreakdown,
   });
 }
